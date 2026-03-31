@@ -214,12 +214,7 @@ patch3
 
 These correspond to **multiple LLM repair attempts** for the same test.
 
-Currently, each file stores the **generated prompt**.
-
-Future versions will:
-
-1. Send prompts to an LLM
-2. Store the **generated repair patch** instead.
+Currently, each file stores the **generated prompt**, as well as the **generated repair patch**.
 
 ---
 
@@ -266,9 +261,6 @@ Implemented:
 * directory organization
 * patch file creation
 * ablation mode
-
-Planned:
-
 * LLM API integration
 * manual patch integration and validation (performed outside this tool)
 
