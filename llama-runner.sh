@@ -6,8 +6,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
-#SBATCH --time=02:00:00
+#SBATCH --mem=160G
+#SBATCH --time=09:00:00
 #SBATCH --output=logs/run_%j.log
 
 # 1. Load modules
@@ -21,6 +21,7 @@ source /scratch/pkrishn5/flaky_repair/venvs/repair_env/bin/activate
 # 3. Hugging Face cache
 export HF_HOME="/scratch/pkrishn5/flaky_repair/hf_cache"
 export HF_TOKEN="your_token_here"
+export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128,expandable_segments:True"
 
 # 4. PyTorch memory config
 export PYTORCH_ALLOC_CONF=expandable_segments:True

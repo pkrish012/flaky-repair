@@ -3,6 +3,7 @@ import argparse, json, sys, re, os
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from huggingface_hub import login
 import torch
+import hashlib
 
 MODEL_CACHE = {}
 
@@ -13,7 +14,7 @@ def load_model(model_name):
     hf_token = os.getenv("HF_TOKEN") if model_name == "llama" else None
 
     if model_name == "llama":
-        model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
+        model_id = "meta-llama/Llama-3.3-70B-Instruct"
         if not hf_token:
             raise RuntimeError("HF_TOKEN environment variable not set for LLaMA access")
 
@@ -21,22 +22,25 @@ def load_model(model_name):
             load_in_4bit=True,
             bnb_4bit_compute_dtype=torch.bfloat16,
             bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
+            bnb_4bit_use_double_quant=False,
         )
 
         tokenizer = AutoTokenizer.from_pretrained(model_id, token=hf_token)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
 
-        # single-GPU load
         load_kwargs = {
             "quantization_config": bnb_config,
             "trust_remote_code": True,
             "token": hf_token,
-            "device_map": {"": "cuda:0"}  # load entirely on GPU 0
+            "device_map": "auto",
+            "torch_dtype": torch.float16,    # Avoids 4-byte float32 spike
+            "low_cpu_mem_usage": True,       # Vital for sharded loading
+            "max_memory": {0: "60GiB", "cpu": "150GiB"} # Headroom for activations
         }
 
-        model = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)
+        model = AutoModelForCausalLM.from_pretrained(model_id, 
+                                                     **load_kwargs)
 
     elif model_name == "qwen":
         model_id = "Qwen/Qwen2.5-Coder-14B-Instruct"
@@ -135,6 +139,40 @@ def read_and_parse_json(json_path, ablate, model):
                                 entry.get("helper_methods", ""),
                                 entry.get("full_test_code", "")
                                 )
+        
+def compress_identifier(test_identifier, max_len=200, keep_packages=1):
+    base = test_identifier.replace(" ", "_").replace("+", "__")
+
+    if len(base) <= max_len:
+        return base
+
+    def compress_side(side):
+        parts = side.split(".")
+
+        # If already short, leave it
+        if len(parts) <= keep_packages + 2:
+            return side
+
+        # Split into:
+        # [long prefix] + [kept packages + class + method]
+        prefix_parts = parts[:-(keep_packages + 2)]
+        tail_parts = parts[-(keep_packages + 2):]
+
+        prefix = ".".join(prefix_parts)
+        tail = ".".join(tail_parts)
+
+        prefix_hash = hashlib.md5(prefix.encode()).hexdigest()[:10]
+
+        return f"{prefix_hash}.{tail}"
+
+    # Handle OD vs ID
+    if "____" in base:
+        victim, polluter = base.split("____", 1)
+        victim_comp = compress_side(victim)
+        polluter_comp = compress_side(polluter)
+        return f"{victim_comp}____{polluter_comp}"
+    else:
+        return compress_side(base)
 
 def create_folders_and_files(flaky_type, ablate, test_identifier, repo_name, commit_hash, model,
                             test_name, victim_test, polluter_test, reproduction_steps, error_messages,
@@ -143,7 +181,9 @@ def create_folders_and_files(flaky_type, ablate, test_identifier, repo_name, com
     type_dir = "OD-candidates" if flaky_type == "OD" else "ID-candidates"
 
     # sanitize identifier for filesystem
-    safe_identifier = test_identifier.replace(" ", "_").replace("+", "__")
+    safe_identifier = compress_identifier(test_identifier)
+
+    print(safe_identifier)
 
     repo_commit_dir = f"{repo_name}-{commit_hash}"
 

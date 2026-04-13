@@ -16,7 +16,7 @@ Given a JSON dataset describing flaky tests, the script:
 4. Creates an organized output directory for each test.
 5. Generates placeholder patch files containing the prompt.
 
-The generated prompts are intended to be sent to LLMs (e.g., **LLaMA** or **Qwen**) to produce candidate test repairs.
+The generated prompts are intended to be sent to LLMs (e.g., **LLaMA-3.3-70B-Instruct** or **Qwen-2.5-14B-Instruct**) to produce candidate test repairs.
 
 ---
 
@@ -71,7 +71,7 @@ The input JSON file must contain a single key mapping to an array of test object
 ```json
 {
   "test_name": "com.example.TestClass.testA",
-  "od_or_id": "IDA",
+  "od_or_id": "ID",
   "source": "https://github.com/example/project",
   "reproduction_steps": [
     "Clone the repository",
@@ -147,11 +147,11 @@ python generate_prompts.py dataset.json llama
 Supported models:
 
 ```
-llama
-qwen
+llama (LLaMA-3.3-70B-Instruct)
+qwen  (Qwen2.5-Coder-14B-Instruct)
 ```
 
-The selected model name is used only for **file naming** at this stage.
+The selected model name is used for **file naming**, and **selecting the LLM to generate output patches**
 
 ---
 
@@ -162,13 +162,13 @@ Ablation mode removes reproduction steps from the generated prompts.
 Run with:
 
 ```bash
-python generate_prompts.py <json_file> <model> -ablate
+python generate_prompts.py <json_file> <model> --ablate
 ```
 
 Example:
 
 ```bash
-python generate_prompts.py dataset.json qwen -ablate
+python generate_prompts.py dataset.json qwen --ablate
 ```
 
 This produces prompts **without reproduction instructions**, allowing controlled experiments on prompt context.
@@ -204,7 +204,7 @@ outputs/
 
 # Patch Files
 
-Each test produces **three candidate patch files**:
+Each test currently produces **three candidate patch files**:
 
 ```
 patch1
@@ -212,9 +212,12 @@ patch2
 patch3
 ```
 
-These correspond to **multiple LLM repair attempts** for the same test.
+These correspond to **multiple, single-shot LLM repair attempts** for the same test.
 
-Currently, each file stores the **generated prompt**, as well as the **generated repair patch**.
+Currently, each file stores the **generated prompt** and the **generated repair patch**
+
+In the case that the name set to the output file is too long, the first few package directories are **hashed**
+using MD5.
 
 ---
 
@@ -228,6 +231,8 @@ Prompts contain structured debugging evidence:
 * error information
 * suspect lines
 * code context
+
+Note: Reproduction Steps are not executed by the LLM. They serve solely as contextual information
 
 The model is required to produce output in a strict format including:
 
