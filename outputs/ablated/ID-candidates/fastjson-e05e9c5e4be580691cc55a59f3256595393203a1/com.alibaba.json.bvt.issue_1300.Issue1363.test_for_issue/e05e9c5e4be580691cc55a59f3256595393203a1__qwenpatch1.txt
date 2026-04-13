@@ -1,0 +1,105 @@
+=== PROMPT ===
+You are a software testing expert specializing in debugging and repairing flaky tests.
+Your task is to fix a flaky test using structured execution evidence.
+
+TEST METADATA:
+Flaky Type: ID
+Test Name: com.alibaba.json.bvt.issue_1300.Issue1363.test_for_issue
+
+FLAKINESS DESCRIPTION:
+ID flaky tests are caused by APIs or logic that assume deterministic ordering or stable execution behavior.
+Examples include unordered collections, reflection order, concurrency timing, or platform-dependent APIs.
+Fixes typically enforce deterministic ordering or remove nondeterministic assumptions.
+
+ERROR INFORMATION:
+Error Messages: expected:<..."name":"b","value":{"[name":"a","value":1]},"value1":{"a":{"$r..."> but was:<..."name":"b","value":{"[value":1,"name":"a"]},"value1":{"a":{"$r...">
+Failing Lines: assertEquals(jsonStr, JSON.toJSONString(obj));
+Potential Flaky Lines: DataSimpleVO obj = JSON.parseObject(jsonStr, DataSimpleVO.class);
+
+CODE CONTEXT:
+Relevant Global Variables: 
+Relevant Helper Methods: public static class DataSimpleVO {
+    public String name;
+    public Object value;
+    public Object value1;
+
+    public DataSimpleVO() {
+    }
+
+    public DataSimpleVO(String name, Object value) {
+        this.name = name;
+        this.value = value;
+    }
+
+    @Override
+    public String toString() {
+        return "DataSimpleVO [name=" + name + ", value=" + value + ", value1=" + value1 + "]";
+    }
+}
+Relevant Test Code: public void test_for_issue() throws Exception {
+    DataSimpleVO a = new DataSimpleVO("a", 1);
+    DataSimpleVO b = new DataSimpleVO("b", 2);
+    b.value = a;
+    Map<String, Object> map = new HashMap<String, Object>();
+    map.put(a.name, a);
+    b.value1 = map;
+
+    String jsonStr = JSON.toJSONString(b);
+    System.out.println(jsonStr);
+    DataSimpleVO obj = JSON.parseObject(jsonStr, DataSimpleVO.class);
+    assertEquals(jsonStr, JSON.toJSONString(obj));
+}
+
+    INSTRUCTIONS - STRICT OUTPUT FORMAT:
+    Follow steps below. Output raw code only. Do NOT use markdown code fences (```). Do NOT include ``` anywhere in your output. 
+    Do not write explanations.
+
+    1) Fix the flakiness and print the fixed complete method code of this test between:
+        //<fix start>
+        CODE HERE
+        //<fix end>
+
+        Requirements:
+        - Code must compile and use correct argument and variable types.
+        - Do NOT invent any classes, methods, or APIs not already present in the test or provided code context.
+        - Do NOT suppress assertion failures with try-catch.
+        - Make minimal changes; preserve the original test logic unless absolutely necessary.
+        - Fix nondeterminism at the source (e.g., ordering, shared state, API usage).
+        - Only wrap or modify the existing flaky API usage; do NOT bypass it.
+        - Do NOT manually reconstruct expected outputs or JSON strings.
+        - Only use reflection if it is already present in the test.
+
+    2) If dependencies must be updated, output:
+        <!-- <pom.xml start> -->
+        DEPENDENCY HERE
+        <!-- <pom.xml end> -->
+
+        Rules:
+        - Provide exact version
+        - Do not duplicate existing dependencies
+        - Do not include project artifacts
+
+    3) If imports must be added, output:
+        //<import start>
+        IMPORTS HERE
+        //<import end>
+
+        Assume all existing classes and imports are already correctly configured.
+    
+
+=== OUTPUT ===
+ //<fix start>
+public void test_for_issue() throws Exception {
+    DataSimpleVO a = new DataSimpleVO("a", 1);
+    DataSimpleVO b = new DataSimpleVO("b", 2);
+    b.value = a;
+    Map<String, Object> map = new TreeMap<>(String::compareTo); // Use TreeMap for consistent ordering
+    map.put(a.name, a);
+    b.value1 = map;
+
+    String jsonStr = JSON.toJSONString(b);
+    System.out.println(jsonStr);
+    DataSimpleVO obj = JSON.parseObject(jsonStr, DataSimpleVO.class);
+    assertEquals(jsonStr, JSON.toJSONString(obj));
+}
+<fix end>

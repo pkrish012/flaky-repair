@@ -1,0 +1,165 @@
+=== PROMPT ===
+You are a software testing expert specializing in debugging and repairing flaky tests.
+Your task is to fix a flaky test using structured execution evidence.
+
+TEST METADATA:
+Flaky Type: ID
+Test Name: org.apache.commons.lang3.builder.MultilineRecursiveToStringStyleTest.nestedAndArray
+
+FLAKINESS DESCRIPTION:
+ID flaky tests are caused by APIs or logic that assume deterministic ordering or stable execution behavior.
+Examples include unordered collections, reflection order, concurrency timing, or platform-dependent APIs.
+Fixes typically enforce deterministic ordering or remove nondeterministic assumptions.
+
+ERROR INFORMATION:
+Error Messages: expected: <org.apache.commons.lang3.builder.MultilineRecursiveToStringStyleTest$Account@1068e947[        
+  owner=<null>,
+  transactions=java.util.ArrayList@7dc222ae{
+    org.apache.commons.lang3.builder.MultilineRecursiveToStringStyleTest$Transaction@aecb35a[
+      amount=100.0,
+      date=2014.10.14
+    ],
+    org.apache.commons.lang3.builder.MultilineRecursiveToStringStyleTest$Transaction@5fcd892a[
+      amount=50.0,
+      date=2014.10.15
+    ]
+  }
+]> but was: <org.apache.commons.lang3.builder.MultilineRecursiveToStringStyleTest$Account@1068e947[
+  transactions=java.util.ArrayList@7dc222ae{
+    org.apache.commons.lang3.builder.MultilineRecursiveToStringStyleTest$Transaction@aecb35a[
+      date=2014.10.14,
+      amount=100.0
+    ],
+    org.apache.commons.lang3.builder.MultilineRecursiveToStringStyleTest$Transaction@5fcd892a[
+      amount=50.0,
+      date=2014.10.15
+    ]
+  },
+  owner=<null>
+]>
+Failing Lines: assertEquals(expected, toString(acc));
+Potential Flaky Lines: toString(acc)
+
+CODE CONTEXT:
+Relevant Global Variables: private final String BR = System.lineSeparator();
+Relevant Helper Methods: static class Account {
+    Customer owner;
+    List<Transaction> transactions = new ArrayList<>();
+
+    public double getBalance() {
+        double balance = 0;
+        for (final Transaction tx : transactions) {
+            balance += tx.amount;
+        }
+        return balance;
+    }
+}
+
+static class Transaction {
+    double amount;
+    String date;
+
+    Transaction(final String datum, final double betrag) {
+        this.date = datum;
+        this.amount = betrag;
+    }
+}
+
+private String getClassPrefix(final Object object) {
+    return object.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(object));
+}
+
+private String toString(final Object object) {
+    return new ReflectionToStringBuilder(object, new MultilineRecursiveToStringStyle()).toString();
+}
+Relevant Test Code: @Test
+public void nestedAndArray() {
+    final Account acc = new Account();
+    final Transaction tx1 = new Transaction("2014.10.14", 100);
+    final Transaction tx2 = new Transaction("2014.10.15", 50);
+    acc.transactions.add(tx1);
+    acc.transactions.add(tx2);
+    final String expected = getClassPrefix(acc) + "[" + BR
+                    + "  owner=<null>," + BR
+                    + "  transactions=" + getClassPrefix(acc.transactions) + "{" + BR
+                    + "    " + getClassPrefix(tx1) + "[" + BR
+                    + "      amount=100.0," + BR
+                    + "      date=2014.10.14" + BR
+                    + "    ]," + BR
+                    + "    " + getClassPrefix(tx2) + "[" + BR
+                    + "      amount=50.0," + BR
+                    + "      date=2014.10.15" + BR
+                    + "    ]" + BR
+                    + "  }" + BR
+                    + "]";
+    assertEquals(expected, toString(acc));
+}
+
+    INSTRUCTIONS - STRICT OUTPUT FORMAT:
+    Follow steps below. Output raw code only. Do NOT use markdown code fences (```). Do NOT include ``` anywhere in your output. 
+    Do not write explanations.
+
+    1) Fix the flakiness and print the fixed complete method code of this test between:
+        //<fix start>
+        CODE HERE
+        //<fix end>
+
+        Requirements:
+        - Code must compile and use correct argument and variable types.
+        - Do NOT invent any classes, methods, or APIs not already present in the test or provided code context.
+        - Do NOT suppress assertion failures with try-catch.
+        - Make minimal changes; preserve the original test logic unless absolutely necessary.
+        - Fix nondeterminism at the source (e.g., ordering, shared state, API usage).
+        - Only wrap or modify the existing flaky API usage; do NOT bypass it.
+        - Do NOT manually reconstruct expected outputs or JSON strings.
+        - Only use reflection if it is already present in the test.
+
+    2) If dependencies must be updated, output:
+        <!-- <pom.xml start> -->
+        DEPENDENCY HERE
+        <!-- <pom.xml end> -->
+
+        Rules:
+        - Provide exact version
+        - Do not duplicate existing dependencies
+        - Do not include project artifacts
+
+    3) If imports must be added, output:
+        //<import start>
+        IMPORTS HERE
+        //<import end>
+
+        Assume all existing classes and imports are already correctly configured.
+    
+
+=== OUTPUT ===
+ //<fix start>
+     import java.util.Collections;
+     
+     @Test
+     public void nestedAndArray() {
+         final Account acc = new Account();
+         final Transaction tx1 = new Transaction("2014.10.14", 100);
+         final Transaction tx2 = new Transaction("2014.10.15", 50);
+         acc.transactions.add(tx1);
+         acc.transactions.add(tx2);
+         
+         // Ensure consistent field order
+         Collections.sort(acc.transactions, (t1, t2) -> Double.compare(t1.amount, t2.amount));
+         
+         final String expected = getClassPrefix(acc) + "[" + BR
+                             + "  owner=<null>," + BR
+                             + "  transactions=" + getClassPrefix(acc.transactions) + "{" + BR
+                             + "    " + getClassPrefix(tx1) + "[" + BR
+                             + "      amount=100.0," + BR
+                             + "      date=2014.10.14" + BR
+                             + "    ]," + BR
+                             + "    " + getClassPrefix(tx2) + "[" + BR
+                             + "      amount=50.0," + BR
+                             + "      date=2014.10.15" + BR
+                             + "    ]" + BR
+                             + "  }" + BR
+                             + "]";
+         assertEquals(expected, toString(acc));
+     }
+     //<fix end>

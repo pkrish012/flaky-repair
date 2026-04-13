@@ -1,0 +1,125 @@
+=== PROMPT ===
+You are a software testing expert specializing in debugging and repairing flaky tests.
+Your task is to fix a flaky test using structured execution evidence.
+
+TEST METADATA:
+Flaky Type: ID
+Test Name: com.alibaba.json.bvt.support.spring.mock.testcase.FastJsonpHttpMessageConverter4Case3Test.test1_2
+
+FLAKINESS DESCRIPTION:
+ID flaky tests are caused by APIs or logic that assume deterministic ordering or stable execution behavior.
+Examples include unordered collections, reflection order, concurrency timing, or platform-dependent APIs.
+Fixes typically enforce deterministic ordering or remove nondeterministic assumptions.
+
+REPRODUCTION STEPS:
+Steps required to reproduce failure:
+1. Clone the repository
+2. Checkout commit e05e9c5e4be580691cc55a59f3256595393203a1
+3. Ensure Java 8 is active
+4. Run NonDex on the test: mvn nondex:nondex -Dtest=com.alibaba.json.bvt.support.spring.mock.testcase.FastJsonpHttpMessageConverter4Case3Test#test1_2
+5. Observe test failures in the console output
+
+ERROR INFORMATION:
+Error Messages: Response content expected:</**/fnUpdateSome({"name":"???","id":123})> but was:</**/fnUpdateSome({"id":123,"name":"???"})>
+Failing Lines: .andExpect(content().string("/**/fnUpdateSome({\"name\":\"哈哈哈\",\"id\":123})"));
+Potential Flaky Lines: json.toJSONString()
+
+CODE CONTEXT:
+Relevant Global Variables: private static final MediaType APPLICATION_JAVASCRIPT = new MediaType("application", "javascript"); @Autowired private WebApplicationContext wac; private MockMvc mockMvc;
+Relevant Helper Methods: @Before public void setup() { this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).addFilter(new CharacterEncodingFilter("UTF-8", true)).build(); }
+Relevant Test Code: @Test public void test1_2() throws Exception { JSONObject json = new JSONObject(); json.put("id", 123); json.put("name", "哈哈哈"); ResultActions actions = mockMvc.perform((post("/fastjson/test1?callback=fnUpdateSome").characterEncoding("UTF-8").content(json.toJSONString()).contentType(MediaType.APPLICATION_JSON))); actions.andDo(print()); actions.andExpect(status().isOk()).andExpect(content().contentType(APPLICATION_JAVASCRIPT)).andExpect(content().string("/**/fnUpdateSome({\"name\":\"哈哈哈\",\"id\":123})")); }
+
+    INSTRUCTIONS - STRICT OUTPUT FORMAT:
+    Follow steps below. Output raw code only. Do NOT use markdown code fences (```). Do NOT include ``` anywhere in your output. 
+    Do not write explanations.
+
+    1) Fix the flakiness and print the fixed complete method code of this test between:
+        //<fix start>
+        CODE HERE
+        //<fix end>
+
+        Requirements:
+        - Code must compile and use correct argument and variable types.
+        - Do NOT invent any classes, methods, or APIs not already present in the test or provided code context.
+        - Do NOT suppress assertion failures with try-catch.
+        - Make minimal changes; preserve the original test logic unless absolutely necessary.
+        - Fix nondeterminism at the source (e.g., ordering, shared state, API usage).
+        - Only wrap or modify the existing flaky API usage; do NOT bypass it.
+        - Do NOT manually reconstruct expected outputs or JSON strings.
+        - Only use reflection if it is already present in the test.
+
+    2) If dependencies must be updated, output:
+        <!-- <pom.xml start> -->
+        DEPENDENCY HERE
+        <!-- <pom.xml end> -->
+
+        Rules:
+        - Provide exact version
+        - Do not duplicate existing dependencies
+        - Do not include project artifacts
+
+    3) If imports must be added, output:
+        //<import start>
+        IMPORTS HERE
+        //<import end>
+
+        Assume all existing classes and imports are already correctly configured.
+    
+
+=== OUTPUT ===
+ //<fix start>
+     import org.junit.Before;
+     import org.junit.Test;
+     import org.springframework.beans.factory.annotation.Autowired;
+     import org.springframework.http.MediaType;
+     import org.springframework.test.context.ContextConfiguration;
+     import org.springframework.test.context.web.WebAppConfiguration;
+     import org.springframework.test.web.servlet.MockMvc;
+     import org.springframework.test.web.servlet.ResultActions;
+     import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+     import org.springframework.web.filter.CharacterEncodingFilter;
+
+     import java.util.Map;
+     import java.util.TreeMap;
+
+     import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+     import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+     import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+     @WebAppConfiguration
+     @ContextConfiguration(locations = {"classpath*:spring-mvc-config.xml"})
+     public class FastJsonpHttpMessageConverter4Case3Test {
+
+         private static final MediaType APPLICATION_JAVASCRIPT = new MediaType("application", "javascript");
+
+         @Autowired
+         private WebApplicationContext wac;
+
+         private MockMvc mockMvc;
+
+         @Before
+         public void setup() {
+             this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac)
+                     .addFilter(new CharacterEncodingFilter("UTF-8", true))
+                     .build();
+         }
+
+         @Test
+         public void test1_2() throws Exception {
+             Map<String, Object> map = new TreeMap<>();
+             map.put("id", 123);
+             map.put("name", "哈哈哈");
+             String jsonString = JSONObject.toJSONString(map);
+
+             ResultActions actions = mockMvc.perform(post("/fastjson/test1?callback=fnUpdateSome")
+                     .characterEncoding("UTF-8")
+                     .content(jsonString)
+                     .contentType(MediaType.APPLICATION_JSON));
+
+             actions.andDo(print());
+             actions.andExpect(status().isOk())
+                    .andExpect(content().contentType(APPLICATION_JAVASCRIPT))
+                    .andExpect(content().string("/**/fnUpdateSome({\"name\":\"哈哈哈\",\"id\":123})"));
+         }
+     }
+     //<fix end>

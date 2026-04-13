@@ -1,0 +1,133 @@
+=== PROMPT ===
+You are a software testing expert specializing in debugging and repairing flaky tests.
+Your task is to fix a flaky test using structured execution evidence.
+
+TEST METADATA:
+Flaky Type: ID
+Test Name: org.apache.commons.lang3.builder.ToStringBuilderTest.testReflectionHierarchy
+
+FLAKINESS DESCRIPTION:
+ID flaky tests are caused by APIs or logic that assume deterministic ordering or stable execution behavior.
+Examples include unordered collections, reflection order, concurrency timing, or platform-dependent APIs.
+Fixes typically enforce deterministic ordering or remove nondeterministic assumptions.
+
+ERROR INFORMATION:
+Error Messages: expected: <org.apache.commons.lang3.builder.ToStringBuilderTest$ReflectionTestFixtureA@4d339552[a=a,transientA=t]> but was: <org.apache.commons.lang3.builder.ToStringBuilderTest$ReflectionTestFixtureA@4d339552[transientA=t,a=a]>
+Failing Lines: assertEquals(baseString + "[a=a,transientA=t]", ToStringBuilder.reflectionToString(baseA, null, true));
+Potential Flaky Lines: ToStringBuilder.reflectionToString(baseA, null, true)
+
+CODE CONTEXT:
+Relevant Global Variables: 
+Relevant Helper Methods: @AfterEach
+public void after() {
+    validateNullToStringStyleRegistry();
+}
+
+static class ReflectionTestFixtureA {
+    @SuppressWarnings("unused")
+    private final char a = 'a';
+    @SuppressWarnings("unused")
+    private transient char transientA = 't';
+}
+static class ReflectionTestFixtureB extends ReflectionTestFixtureA {
+    @SuppressWarnings("unused")
+    private final char b = 'b';
+    @SuppressWarnings("unused")
+    private transient char transientB = 't';
+}
+private String toBaseString(final Object o) {
+    return o.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(o));
+}
+void validateNullToStringStyleRegistry() {
+    final Map<Object, Object> registry = ToStringStyle.getRegistry();
+    assertNull(registry, "Expected null, actual: " + registry);
+}
+Relevant Test Code: @Test
+public void testReflectionHierarchy() {
+    final ReflectionTestFixtureA baseA = new ReflectionTestFixtureA();
+    String baseString = this.toBaseString(baseA);
+    assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA));
+    assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA, null));
+    assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA, null, false));
+    assertEquals(baseString + "[a=a,transientA=t]", ToStringBuilder.reflectionToString(baseA, null, true));
+    assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA, null, false, null));
+    assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA, null, false, Object.class));
+    assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA, null, false, ReflectionTestFixtureA.class));
+
+    final ReflectionTestFixtureB baseB = new ReflectionTestFixtureB();
+    baseString = this.toBaseString(baseB);
+    assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB));
+    assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB));
+    assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB, null));
+    assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB, null, false));
+    assertEquals(baseString + "[b=b,transientB=t,a=a,transientA=t]", ToStringBuilder.reflectionToString(baseB, null, true));
+    assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB, null, false, null));
+    assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB, null, false, Object.class));
+    assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB, null, false, ReflectionTestFixtureA.class));
+    assertEquals(baseString + "[b=b]", ToStringBuilder.reflectionToString(baseB, null, false, ReflectionTestFixtureB.class));
+}
+
+    INSTRUCTIONS - STRICT OUTPUT FORMAT:
+    Follow steps below. Output raw code only. Do NOT use markdown code fences (```). Do NOT include ``` anywhere in your output. 
+    Do not write explanations.
+
+    1) Fix the flakiness and print the fixed complete method code of this test between:
+        //<fix start>
+        CODE HERE
+        //<fix end>
+
+        Requirements:
+        - Code must compile and use correct argument and variable types.
+        - Do NOT invent any classes, methods, or APIs not already present in the test or provided code context.
+        - Do NOT suppress assertion failures with try-catch.
+        - Make minimal changes; preserve the original test logic unless absolutely necessary.
+        - Fix nondeterminism at the source (e.g., ordering, shared state, API usage).
+        - Only wrap or modify the existing flaky API usage; do NOT bypass it.
+        - Do NOT manually reconstruct expected outputs or JSON strings.
+        - Only use reflection if it is already present in the test.
+
+    2) If dependencies must be updated, output:
+        <!-- <pom.xml start> -->
+        DEPENDENCY HERE
+        <!-- <pom.xml end> -->
+
+        Rules:
+        - Provide exact version
+        - Do not duplicate existing dependencies
+        - Do not include project artifacts
+
+    3) If imports must be added, output:
+        //<import start>
+        IMPORTS HERE
+        //<import end>
+
+        Assume all existing classes and imports are already correctly configured.
+    
+
+=== OUTPUT ===
+ //<fix start>
+     public void testReflectionHierarchy() {
+         final ReflectionTestFixtureA baseA = new ReflectionTestFixtureA();
+         String baseString = this.toBaseString(baseA);
+         assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA));
+         assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA, null));
+         assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA, null, false));
+         assertEquals(baseString + "[a=a,transientA=t]", ToStringBuilder.reflectionToString(baseA, null, true));
+         assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA, null, false, null));
+         assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA, null, false, Object.class));
+         assertEquals(baseString + "[a=a]", ToStringBuilder.reflectionToString(baseA, null, false, ReflectionTestFixtureA.class));
+
+         final ReflectionTestFixtureB baseB = new ReflectionTestFixtureB();
+         baseString = this.toBaseString(baseB);
+         assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB));
+         assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB));
+         assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB, null));
+         assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB, null, false));
+         assertEquals(baseString + "[b=b,transientB=t,a=a,transientA=t]", ToStringBuilder.reflectionToString(baseB, null, true));
+         assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB, null, false, null));
+         assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB, null, false, Object.class));
+         assertEquals(baseString + "[b=b,a=a]", ToStringBuilder.reflectionToString(baseB, null, false, ReflectionTestFixtureA.class));
+         assertEquals(baseString + "[b=b]", ToStringBuilder.reflectionToString(baseB, null, false, ReflectionTestFixtureB.class));
+     }
+     //<fix end>
+```
