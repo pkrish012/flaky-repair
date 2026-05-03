@@ -64,7 +64,8 @@ This script takes ~11 minutes to run.
 * Failure reproduction is best-effort due to nondeterminism.
 * Advanced context fields (e.g., suspect lines) are not automatically generated.
 
-**Suspect Line Extraction Policy**
+**Suspect Line Extraction Policy**:
+
 Suspect lines are identified using a structured, dependency-aware analysis of the failing assertion:
 
 **(i) Assertion-Level Expression**  
@@ -83,10 +84,12 @@ Operations along the execution path of the assertion-level expression that are k
 - **Dynamic Inspection:** Reflection-based retrieval of class members or annotations with unspecified ordering.
 - **Environmental Inputs:** Dependence on external or volatile state (e.g., system time, file system ordering, or thread interleavings).
 
-**Global Variables Extraction Policy**
+**Global Variables Extraction Policy**:
+
 Global variables included in the schema are restricted to class-level fields, static constants, and shared state that are explicitly referenced within the failing test method or its identified suspect lines. By isolating only variables within the tests immediate dependency graph, the representation provides necessary state context while avoiding unrelated class members. Priority is given to variables that undergo state-altering mutations, as these represent the primary vectors of state pollution in implementation-dependent scenarios.
 
-**Helper Methods Extraction Policy**
+**Helper Methods Extraction Policy**:
+
 Helper methods and inner classes encompass the supporting logic required for the test to remain a self-contained unit of reasoning. These include:
 
 - **Utility Logic:** Private helper methods and inner classes invoked within the test body.
@@ -117,7 +120,7 @@ Structured dataset of implementation-dependent flaky tests, including test code,
 
 ### `outputted-patches/`
 This directory contains the generated candidate outputs for all dataset entries, generated using the pipeline described above. 
-These outputs are included to enable reproducibility without requiring re-execution.
+These outputs are included to support reproducibility without requiring re-execution.
 
 Each file contains (1) the generated prompt and (2) the corresponding LLM output patch.
 
@@ -287,7 +290,7 @@ If using **LLaMA-3.3-70B-Instruct**, you must first configure HuggingFace authen
 
 `export HF_TOKEN="your_token_here"`
 
-This should be set in the environment or added to line 23 of the execution script `llama_runner.sh`. You must also ensure that you have been granted access to the 
+This should be set on line 23 of the execution script `llama_runner.sh`. You must also ensure that you have been granted access to the 
 **LLaMA-3.3-70B-Instruct** model on HuggingFace.
 
 *Note: The **Qwen2.5-Coder-14B-Instruct** model does not require an authentication token.*
@@ -308,7 +311,7 @@ This script:
 
 The runner scripts require environment-specific paths.
 
-Update the following lines before execution:
+Update the following lines to match your environment before execution:
 
 - `llama_runner.sh`
   - Line 19: path to the Python virtual environment
@@ -351,10 +354,12 @@ This job:
 For each flaky test instance, the system produces an output file containing two main sections:
 
 === PROMPT ===
+
 (Full structured prompt constructed from the JSON dataset, including metadata, 
 reproduction steps, error traces, suspect lines, and full test code)
 
 === OUTPUT ===
+
 (The LLM-generated patch corresponding to the input prompt)
 
 Each test produces three independent candidate outputs, corresponding to three separate single-shot generations from the model
@@ -593,7 +598,7 @@ Implemented:
 
 ---
 
-# Authors
+# Author
 
 Prashanth Krishnan
 
