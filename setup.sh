@@ -34,7 +34,12 @@ source "$VENV_PATH/bin/activate"
 echo "Updating pip and installing modern LLM libraries..."
 pip install --upgrade pip
 # We force newer versions to ensure Llama 3.3/Qwen 2.5 compatibility
-pip install torch transformers>=4.46.0 accelerate>=0.34.0 bitsandbytes>=0.44.0
+if [ -f "requirements.txt" ]; then
+    pip install -r requirements.txt
+else
+    echo "Error: requirements.txt not found!"
+    exit 1
+fi
 
 # 5. Final Sanity Check
 echo "------------------------------------------------"

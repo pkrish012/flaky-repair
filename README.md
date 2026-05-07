@@ -132,6 +132,7 @@ A set of requirements to install, via:
 pip install -r requirements.txt
 ```
 
+These requirements are installed upon setting up using setup.sh
 ---
 
 # Automated Partial Data Preparation Pipeline 
