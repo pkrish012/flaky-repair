@@ -126,6 +126,12 @@ Each file contains (1) the generated prompt and (2) the corresponding LLM output
 
 The original `outputs/` directory produced by `patch-gen.py` is provided here as `outputted-patches/` for reproducibility.
 
+### `requirements.txt`
+A set of requirements to install, via:
+```bash
+pip install -r requirements.txt
+```
+
 ---
 
 # Automated Partial Data Preparation Pipeline 
@@ -186,11 +192,13 @@ git checkout e05e9c5e4be580691cc55a59f3256595393203a1
 </plugin>
 ```
 
-4. Ensure JVM is properly configured (depends on the project)
+4. Ensure JVM is properly configured (depends on the project). For the subjects tested, all are tested via Java 8.
 
 
 ### Step 3: Run Partial Data Preparation Script
 Execute the script to convert CSV input into structured JSON:
+
+**CRITICAL:** This script must be executed from the parent directory (outside of the cloned repository folder). The `directory` field in your CSV must correctly point to the relative path of the repository.
 
 ```bash
 python partial_data_prep_ID.py test_ID.csv ID-sample.json
@@ -271,6 +279,40 @@ The following is **not automatically performed** by this artifact:
 
 * Automatic application of generated patches to the original source repository
 * Manual inspection of generated patches
+
+#### Example illustrating acquiring suspect lines, global variables, and helper methods:
+For `test_name` = `com.alibaba.json.bvt.asm.SortFieldTest.test_1`
+
+```bash
+public void test_1() throws Exception {
+    V1 entity = new V1();
+
+    String text = JSON.toJSONString(entity, SerializerFeature.SortField);
+    System.out.println(text);
+
+    // 按字段顺序输出
+    // {"f1":0,"f2":0,"f3":0,"f4":0,"f5":0} 
+    Assert.assertEquals("{\"f1\":0,\"f2\":0,\"f3\":0,\"f4\":0,\"f5\":0}", text);
+
+    JSONObject object = JSON.parseObject(text);
+    text = JSON.toJSONString(object, SerializerFeature.SortField);
+    Assert.assertEquals("{\"f1\":0,\"f2\":0,\"f3\":0,\"f4\":0,\"f5\":0}", text);
+
+}
+```
+
+The failing line (as per my collected results in `ID-dataset.json`) is `Assert.assertEquals("{\"f1\":0,\"f2\":0,\"f3\":0,\"f4\":0,\"f5\":0}", text);`
+
+As per rule (i) and (ii) of the **Suspect Line Extraction Policy**, the value of text is = `JSON.toJSONString(object, SerializerFeature.SortField);`
+
+Therefore, the `"suspect_lines"` field is  `[JSON.toJSONString(object, SerializerFeature.SortField);]`
+
+The file containing the above test method has no global variables referenced by the test method. Therefore, the `"global_variables"` is `""`
+
+Finally, as per the **Helper Methods Extraction Policy** the inter class V1 is invoked, therefore, the `"helper_methods"` field is `"public static class V1 {\n    private int f2;\n    private int f1;\n    private int f4;\n    private int f3;\n    private int f5;\n\n    public int getF2() { return f2; }\n    public void setF2(int f2) { this.f2 = f2; }\n    public int getF1() { return f1; }\n    public void setF1(int f1) { this.f1 = f1; }\n    public int getF4() { return f4; }\n    public void setF4(int f4) { this.f4 = f4; }\n    public int getF3() { return f3; }\n    public void setF3(int f3) { this.f3 = f3; }\n    public int getF5() { return f5; }\n    public void setF5(int f5) { this.f5 = f5; }\n}"`
+
+Or, the entirety of the inner class V1.
+
 
 ### Summary
 
